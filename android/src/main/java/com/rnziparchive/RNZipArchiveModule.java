@@ -53,6 +53,42 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
     return "RNZipArchive";
   }
 
+    @ReactMethod
+    public void isFileInZip2(String path, String zipname, String expectedFileName, Promise promise) {
+
+      promise.resolve(true);
+
+    }
+
+    @ReactMethod
+    public void createFilesListInZip(String path, String zipname, Promise promise)
+    {
+         InputStream is;
+         ZipInputStream zis;
+         try
+         {
+             String zipFileName;
+             is = new FileInputStream(path + zipname);
+             zis = new ZipInputStream(new BufferedInputStream(is));
+             ZipEntry zipEntry;
+             byte[] buffer = new byte[1024];
+             int count;
+             List<String> zipNamesList = new ArrayList<>();
+             while ((zipEntry = zis.getNextEntry()) != null)
+             {
+                 zipFileName = zipEntry.getName();
+                  zipNamesList.add(zipFileName);
+                 zis.closeEntry();
+             }
+             promise.resolve(zipNamesList.toString());
+             zis.close();
+         } catch(IOException e) {
+             e.printStackTrace();
+             promise.resolve(false);
+         }
+             promise.resolve(false);
+    }
+
   @ReactMethod
   public void isPasswordProtected(final String zipFilePath, final Promise promise) {
     try {
@@ -64,8 +100,8 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public void unzipWithPassword(final String zipFilePath, final String destDirectory,
-        final String password, final Promise promise) {
+  public void unzipWithPassword(final String zipFilePath, final String destDirectory, final String password,
+      final Promise promise) {
     new Thread(new Runnable() {
       @Override
       public void run() {
@@ -131,7 +167,7 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
 
           File destDir = new File(destDirectory);
           if (!destDir.exists()) {
-            //noinspection ResultOfMethodCallIgnored
+            // noinspection ResultOfMethodCallIgnored
             destDir.mkdirs();
           }
 
@@ -139,8 +175,8 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
 
           // We use arrays here so we can update values
           // from inside the callback
-          final long[] extractedBytes = {0};
-          final int[] lastPercentage = {0};
+          final long[] extractedBytes = { 0 };
+          final int[] lastPercentage = { 0 };
 
           ZipFile zipFile = null;
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -153,7 +189,8 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
           Log.d(TAG, "Zip has " + zipFile.size() + " entries");
           while (entries.hasMoreElements()) {
             final ZipEntry entry = entries.nextElement();
-            if (entry.isDirectory()) continue;
+            if (entry.isDirectory())
+              continue;
 
             StreamUtil.ProgressCallback cb = new StreamUtil.ProgressCallback() {
               @Override
@@ -175,7 +212,7 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
             ensureZipPathSafety(fout, destDirectory);
 
             if (!fout.exists()) {
-              //noinspection ResultOfMethodCallIgnored
+              // noinspection ResultOfMethodCallIgnored
               (new File(fout.getParent())).mkdirs();
             }
             InputStream in = null;
@@ -216,12 +253,13 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
   /**
    * Extract a zip held in the assets directory.
    * <p>
-   * Note that the progress value isn't as accurate as when unzipping
-   * from a file. When reading a zip from a stream, we can't
-   * get accurate uncompressed sizes for files (ZipEntry#getCompressedSize() returns -1).
+   * Note that the progress value isn't as accurate as when unzipping from a file.
+   * When reading a zip from a stream, we can't get accurate uncompressed sizes
+   * for files (ZipEntry#getCompressedSize() returns -1).
    * <p>
-   * Instead, we compare the number of bytes extracted to the size of the compressed zip file.
-   * In most cases this means the progress 'stays on' 100% for a little bit (compressedSize < uncompressed size)
+   * Instead, we compare the number of bytes extracted to the size of the
+   * compressed zip file. In most cases this means the progress 'stays on' 100%
+   * for a little bit (compressedSize < uncompressed size)
    */
   @ReactMethod
   public void unzipAssets(final String assetsPath, final String destDirectory, final Promise promise) {
@@ -244,7 +282,7 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
           try {
             File destDir = new File(destDirectory);
             if (!destDir.exists()) {
-              //noinspection ResultOfMethodCallIgnored
+              // noinspection ResultOfMethodCallIgnored
               destDir.mkdirs();
             }
             ZipInputStream zipIn = new ZipInputStream(assetsInputStream);
@@ -252,19 +290,20 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
 
             ZipEntry entry;
 
-            final long[] extractedBytes = {0};
-            final int[] lastPercentage = {0};
+            final long[] extractedBytes = { 0 };
+            final int[] lastPercentage = { 0 };
 
             updateProgress(0, 1, assetsPath); // force 0%
             File fout;
             while ((entry = zipIn.getNextEntry()) != null) {
-              if (entry.isDirectory()) continue;
+              if (entry.isDirectory())
+                continue;
               fout = new File(destDirectory, entry.getName());
 
               ensureZipPathSafety(fout, destDirectory);
 
               if (!fout.exists()) {
-                //noinspection ResultOfMethodCallIgnored
+                // noinspection ResultOfMethodCallIgnored
                 (new File(fout.getParent())).mkdirs();
               }
 
@@ -311,7 +350,7 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void zip(String fileOrDirectory, String destDirectory, Promise promise) {
-    try{
+    try {
 
       ZipParameters parameters = new ZipParameters();
       parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
@@ -326,9 +365,9 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public void zipWithPassword(String fileOrDirectory, String destDirectory, String password,
-      String encryptionMethod, Promise promise) {
-    try{
+  public void zipWithPassword(String fileOrDirectory, String destDirectory, String password, String encryptionMethod,
+      Promise promise) {
+    try {
 
       ZipParameters parameters = new ZipParameters();
       parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
@@ -368,7 +407,8 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
 
   }
 
-  private void processZip(final String fileOrDirectory, final String destDirectory, final ZipParameters parameters, final Promise promise) {
+  private void processZip(final String fileOrDirectory, final String destDirectory, final ZipParameters parameters,
+      final Promise promise) {
     new Thread(new Runnable() {
       @Override
       public void run() {
@@ -391,8 +431,7 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
               for (int i = 0; i < files.size(); i++) {
                 if (files.get(i).isDirectory()) {
                   zipFile.addFolder(files.get(i).getAbsolutePath(), parameters);
-                }
-                else {
+                } else {
                   zipFile.addFile(files.get(i), parameters);
                 }
                 fileCounter += 1;
@@ -405,8 +444,7 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
               fileCounter += 1;
               updateProgress(fileCounter, totalFiles, destDirectory);
             }
-          }
-          else {
+          } else {
             promise.reject(null, "File or folder does not exist");
           }
 
@@ -430,11 +468,12 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
     map.putString(EVENT_KEY_FILENAME, zipFilePath);
     map.putDouble(EVENT_KEY_PROGRESS, progress);
     getReactApplicationContext().getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-            .emit(PROGRESS_EVENT_NAME, map);
+        .emit(PROGRESS_EVENT_NAME, map);
   }
 
   /**
-   * Return the uncompressed size of the ZipFile (only works for files on disk, not in assets)
+   * Return the uncompressed size of the ZipFile (only works for files on disk,
+   * not in assets)
    *
    * @return -1 on failure
    */
